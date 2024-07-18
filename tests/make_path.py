@@ -1,82 +1,106 @@
 import matplotlib.pyplot as plt
+import time
 
-def generate_square_perimeter(size):
-    return ([(x, 0) for x in range(size)] + 
-            [(size-1, y) for y in range(1, size)] + 
-            [(x, size-1) for x in range(size-2, -1, -1)] + 
-            [(0, y) for y in range(size-2, 0, -1)])
-
-def find_interior_points(perimeter):
-    min_x = min(x for x, y in perimeter)
-    max_x = max(x for x, y in perimeter)
-    min_y = min(y for x, y in perimeter)
-    max_y = max(y for x, y in perimeter)
-    
-    return [(x, y) for x in range(min_x + 1, max_x) for y in range(min_y + 1, max_y)]
-
-def generate_snake_pattern_path(size):
-    path = []
+def create_square_perimeter(size):
+    """領域の外周を作成する関数"""
+    perimeter = set()
     for x in range(size):
-        if x % 2 == 0:  # 偶数列は下から上へ
-            for y in range(size):
-                path.append((x, y))
-        else:  # 奇数列は上から下へ
-            for y in range(size - 1, -1, -1):
-                path.append((x, y))
-    return path
+        perimeter.add((x, 0))
+        perimeter.add((x, size-1))
+    for y in range(1, size-1):
+        perimeter.add((0, y))
+        perimeter.add((size-1, y))
+    return perimeter
 
-def plot_square_with_snake_path_realtime(size, path, delay=0.1):
-    perimeter = generate_square_perimeter(size)
-    interior_points = find_interior_points(perimeter)
-    all_points = set(perimeter + interior_points)
+def generate_interior_points(size):
+    """内部のドットを出力する関数"""
+    return {(x, y) for x in range(1, size-1) for y in range(1, size-1)}
 
+def get_start_point(points):
+    """左下を出力する関数"""
+    return min(points, key=lambda p: (p[0], p[1]))
+
+def get_next_point(current_point, size, visited):
+    """今の座標から次の座標を出力する関数"""
+    x, y = current_point
+    candidates = []
+    if x % 2 == 0:  # 偶数列
+        if y < size - 1 and (x, y+1) not in visited:
+            candidates.append((x, y+1))  # 上に移動
+        elif x < size - 1:
+            candidates.append((x+1, y))  # 右に移動
+    else:  # 奇数列
+        if y > 0 and (x, y-1) not in visited:
+            candidates.append((x, y-1))  # 下に移動
+        elif x < size - 1:
+            candidates.append((x+1, y))  # 右に移動
+
+    return candidates[0] if candidates else None
+
+def plot_square_with_path(size, perimeter, interior_points):
+    """pltで描画する関数"""
     plt.ion()  # インタラクティブモードをオンにする
     fig, ax = plt.subplots(figsize=(5, 5))
 
     # 外周を描画
-    x_coords, y_coords = zip(*perimeter)
-    ax.plot(x_coords + (x_coords[0],), y_coords + (y_coords[0],), 'b-', alpha=0.5, label='Perimeter')
+    perimeter_x, perimeter_y = zip(*perimeter)
+    ax.plot(perimeter_x, perimeter_y, 'b.', alpha=0.5, label='Perimeter')
+    
+    # 内部の点を描画
+    interior_x, interior_y = zip(*interior_points)
+    ax.scatter(interior_x, interior_y, color='red', s=20, alpha=0.5, label='Interior Points')
+    # 経路を描画するための空のラインを作成
+    path_line, = ax.plot([], [], 'g-', alpha=0.7, label='Path')
+    # 現在の点を表す散布図を作成
+    current_point_scatter = ax.scatter([], [], color='green', s=100, label='Current Point')
 
-    # 全ての点を描画
-    all_x_coords, all_y_coords = zip(*all_points)
-    ax.scatter(all_x_coords, all_y_coords, color='red', s=20, alpha=0.5, label='All Points')
-
-    # 現在位置を表す点と経路を表す線を初期化
-    current_point, = ax.plot([], [], 'go', markersize=10, label='Current Position')
-    path_line, = ax.plot([], [], 'g-', alpha=0.5)
-
-    ax.set_title(f"Snake Pattern Path Through {size}x{size} Square")
+    ax.set_title(f"Path in {size}x{size} Square")
     ax.set_xlabel("X coordinate")
     ax.set_ylabel("Y coordinate")
-    ax.legend()
     ax.grid(True, alpha=0.3)
     ax.set_aspect('equal')
+    ax.legend()
 
-    plt.draw()
-    plt.pause(0.1)
+    plt.tight_layout()
+    return fig, ax, path_line, current_point_scatter
 
-    path_x = []
-    path_y = []
+# メインのループ
+if __name__ == "__main__":
+    square_size = 10
 
-    for x, y in path:
-        path_x.append(x)
-        path_y.append(y)
+    perimeter = create_square_perimeter(square_size)
+    interior_points = generate_interior_points(square_size)
+    all_points = perimeter.union(interior_points)
+    start_point = get_start_point(all_points)
 
-        current_point.set_data([x], [y])
+    fig, ax, path_line, current_point_scatter = plot_square_with_path(square_size, perimeter, interior_points)
+
+    path = [start_point]
+    current_point = start_point
+    visited = set([start_point])
+
+    while len(visited) < len(all_points):
+        print(f"Current point: {current_point}")
+
+        # 経路を更新
+        path_x, path_y = zip(*path)
         path_line.set_data(path_x, path_y)
+        # 現在の点を更新
+        current_point_scatter.set_offsets([current_point])
+        # 描画を更新
+        fig.canvas.draw()
+        fig.canvas.flush_events()
+        # 0.2秒待機
+        time.sleep(0.2)
 
-        plt.draw()
-        plt.pause(delay)
+        # 次の点を取得
+        next_point = get_next_point(current_point, square_size, visited)
+
+        path.append(next_point)
+        visited.add(next_point)
+        current_point = next_point
 
     plt.ioff()  # インタラクティブモードをオフにする
     plt.show()
 
-# 使用例
-if __name__ == "__main__":
-    square_size = 10
-
-    # 蛇行パターンの経路を生成
-    snake_path = generate_snake_pattern_path(square_size)
-
-    # リアルタイムでプロットを表示
-    plot_square_with_snake_path_realtime(square_size, snake_path, delay=0.1)
+print("Program ended.")
