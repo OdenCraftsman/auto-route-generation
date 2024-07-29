@@ -24,8 +24,6 @@ def handle_client(conn, addr):
             data = conn.recv(1024)
             if not data:
                 continue
-            if counter == 10:
-                break
             print(f"受信したデータ(count-{counter}): {data.decode()}")
             counter += 1
     except Exception as e:
