@@ -1,3 +1,5 @@
+dotenv
+
 matplotlib
 
 # for gps
