@@ -5,3 +5,8 @@
 .envファイルは以下の内容を含み、ルートディレクトリに配置される。
 - WIFI-SSID
 - WIFI-PASSWORD
+以下に.envファイルのテンプレートを記す。
+```env
+WIFI-SSID=TEMPLATE-WIFI-SSID
+WIFI-PASSWORD=TEMPLATE-WIFI-PASSWORD
+```
