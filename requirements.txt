@@ -1,0 +1,4 @@
+matplotlib
+
+# for gps
+git+https://github.com/inmcm/micropyGPS.git
