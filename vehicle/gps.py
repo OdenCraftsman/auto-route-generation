@@ -7,11 +7,15 @@ class GPS:
     sentence => NMEAセンテンス
     """
     def __init__(self, ):
-        self.gga_gps = MicropyGPS()
-        self.rmc_gps = MicropyGPS()
+        self.gga_gps = MicropyGPS(location_formatting="dd")
+        self.rmc_gps = MicropyGPS(location_formatting="dd")
 
     #################### ▼property▼ ####################
-    
+    @property
+    def location(self):
+        latitude = f"{self.gga_gps.latitude[0]}{self.gga_gps.latitude[1]}"
+        longitude = f"{self.gga_gps.longitude[0]}{self.gga_gps.longitude[1]}"
+        return (latitude, longitude)
     #################### ▲property▲ ####################
 
     #################### ▼function▼ ####################
@@ -54,3 +58,12 @@ class GPS:
         else:
             return None
     #################### ▲function▲ ####################
+
+if __name__ == "__main__":
+    sentences = """
+    $GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47
+    $GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A"
+    """
+    gps = GPS()
+    gps.update_sentence(sentences)
+    print(gps.location)
