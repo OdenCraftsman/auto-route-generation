@@ -7,6 +7,14 @@ class GPS:
     sentence => NMEAセンテンス
     """
     def __init__(self, ):
+        # sentence
+        self.current_gga_sentence = ""
+        self.current_rmc_sentence = ""
+        # any data
+        self.fix_quality = None
+        self.latitude = None
+        self.longitude = None
+        # gps data
         self.gga_gps = MicropyGPS(location_formatting="dd")
         self.rmc_gps = MicropyGPS(location_formatting="dd")
 
@@ -26,9 +34,14 @@ class GPS:
             if sentenceID == 'GGA':
                 for char in sentence:
                     self.gga_gps.update(char)
+                self.current_gga_sentence = sentence
+                self.fix_quality = self.get_fix_quality(sentence)
+                self.latitude = self.gga_gps.latitude
+                self.longitude = self.gga_gps.longitude
             elif sentenceID == 'RMC':
                 for char in sentence:
                     self.rmc_gps.update(char)
+                self.current_rmc_sentence = sentence
     def split_sentences(self, sentences):
         """
         複数のNMEAセンテンスを含む文字列を個別のセンテンスに分割する関数
@@ -57,6 +70,21 @@ class GPS:
             return match.group(1)
         else:
             return None
+    def get_fix_quality(self, sentence):
+        """
+        NMEAセンテンスからFix Qualityを取得する関数
+        GGAセンテンスのみ対応
+
+        :param sentence: NMEAセンテンス文字列
+        :return: 3桁のセンテンスID または None（無効なセンテンスの場合）
+        """
+        sentenceID = self.get_sentenceID(sentence)
+        if sentenceID != 'GGA':
+            return None
+        segments = sentence.split(',')
+        if not len(segments) >= 6:
+            return None
+        return segments[6]
     #################### ▲function▲ ####################
 
 if __name__ == "__main__":
@@ -67,3 +95,4 @@ if __name__ == "__main__":
     gps = GPS()
     gps.update_sentence(sentences)
     print(gps.location)
+    print(gps.fix_quality)
